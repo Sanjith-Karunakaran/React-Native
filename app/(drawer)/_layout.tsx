@@ -16,14 +16,6 @@ export default function DrawerLayout() {
           title: 'FoodApp',
         }}
       />
-
-      <Drawer.Screen
-        name="cart"
-        options={{
-          drawerLabel: 'Cart',
-          title: 'Cart',
-        }}
-      />
     </Drawer>
   );
 }

@@ -2,18 +2,16 @@ import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions } from '@react-navigation/native';
 import { Tabs, useNavigation } from 'expo-router';
-import { Text, TouchableOpacity, View } from 'react-native';
-import { useCart } from '../../../context/CartContext';
+import { TouchableOpacity } from 'react-native';
 
 export default function TabLayout() {
   const { colors } = useTheme();
-  const { items } = useCart(); 
   const navigation = useNavigation();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#f97316',
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
           backgroundColor: colors.card,
@@ -24,67 +22,52 @@ export default function TabLayout() {
         },
         headerTintColor: colors.text,
         headerLeft: () => (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
             style={{ marginLeft: 16 }}
           >
             <Ionicons name="menu" size={24} color={colors.text} />
           </TouchableOpacity>
         ),
-        headerRight: () => (
-          <TouchableOpacity 
-            onPress={() => (navigation as any).navigate('cart')}
-            style={{ marginRight: 16, position: 'relative' }}
-          >
-            <Ionicons name="cart" size={24} color={colors.text} />
-            {items.length > 0 && (
-              <View style={{
-                position: 'absolute',
-                top: -4,
-                right: -8,
-                backgroundColor: '#ef4444',
-                borderRadius: 10,
-                width: 20,
-                height: 20,
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>
-                  {items.length}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        ),
       }}
     >
+
+      {/* 1️⃣ DISCOUNT LIST */}
       <Tabs.Screen
-        name="index"
+        name="discounts"
         options={{
-          title: 'Home',
+          title: 'Discounts',
+          tabBarLabel: 'Discounts',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+            <Ionicons name="list" size={size} color={color} />
           ),
         }}
       />
+
+      {/* 2️⃣ CREATE DISCOUNT */}
       <Tabs.Screen
-        name="menu"
+        name="create-discount"
         options={{
-          title: 'Menu',
+          title: 'Create',
+          tabBarLabel: 'Create',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="restaurant" size={size} color={color} />
+            <Ionicons name="add-circle" size={size} color={color} />
           ),
         }}
       />
+
+      {/* 3️⃣ EDIT DISCOUNT */}
       <Tabs.Screen
-        name="profile"
+        name="edit-discount"
         options={{
-          title: 'Profile',
+          title: 'Edit',
+          tabBarLabel: 'Edit',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+            <Ionicons name="create" size={size} color={color} />
           ),
         }}
       />
+
     </Tabs>
   );
 }

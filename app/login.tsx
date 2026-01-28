@@ -2,14 +2,14 @@ import { useTheme } from '@/context/ThemeContext';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import { login } from '@/store/authSlice';
@@ -75,7 +75,8 @@ export default function LoginScreen() {
       })
     );
 
-    router.replace('/(drawer)/(tabs)');
+    router.replace('/(drawer)/(tabs)/discounts');
+
   };
 
   return (
