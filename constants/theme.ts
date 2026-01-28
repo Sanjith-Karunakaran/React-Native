@@ -39,6 +39,27 @@ export const uberEatsTheme: Theme = {
   border: '#e5e7eb',
 };
 
+/* FOODHUB DARK THEME */
+export const foodhubDarkTheme: Theme = {
+  primary: '#f97316',
+  secondary: '#fb923c',
+  background: '#0f172a',
+  card: '#1e293b',
+  text: '#ffffff',
+  border: '#334155',
+};
+
+/* UBER EATS DARK THEME */
+export const uberEatsDarkTheme: Theme = {
+  primary: '#06C167',
+  secondary: '#2DD881',
+  background: '#0f0f0f',
+  card: '#1c1c1c',
+  text: '#ffffff',
+  border: '#2a2a2a',
+};
+
+
 /* DARK THEME */
 export const darkTheme: Theme = {
   primary: '#06C167',

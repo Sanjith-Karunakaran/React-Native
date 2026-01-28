@@ -1,5 +1,5 @@
 import { getBrandConfig } from '@/constants/brand';
-import { darkTheme, Theme } from '@/constants/theme';
+import { Theme } from '@/constants/theme';
 import React, { createContext, ReactNode, useContext, useState } from 'react';
 
 type ThemeContextType = {
@@ -29,7 +29,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   const brand = getBrandConfig();
 
-  const theme = isDark ? darkTheme : brand.theme;
+  const theme = isDark ? brand.dark : brand.light;
+
 
   const toggleTheme = () => setIsDark(prev => !prev);
 

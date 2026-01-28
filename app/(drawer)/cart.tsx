@@ -32,7 +32,6 @@ export default function CartScreen() {
                 style={[styles.cartItem, { backgroundColor: colors.card }]}
               >
                 <View style={styles.itemInfo}>
-                  <Text style={styles.emoji}>{item.emoji}</Text>
                   <View style={styles.details}>
                     <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
                     <Text style={styles.price}>₹{item.price}</Text>

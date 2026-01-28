@@ -27,11 +27,45 @@ export default function LoginScreen() {
     password: '',
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const handleChange = (key: string, value: string) => {
     setForm(prev => ({ ...prev, [key]: value }));
   };
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!form.username.trim()) newErrors.username = 'Username is required';
+
+    if (!form.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else if (form.phone.length < 10) {
+      newErrors.phone = 'Enter a valid phone number';
+    }
+
+    if (!form.address.trim()) newErrors.address = 'Address is required';
+
+    if (!form.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      newErrors.email = 'Enter a valid email';
+    }
+
+    if (!form.password.trim()) {
+      newErrors.password = 'Password is required';
+    } else if (form.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = () => {
+    if (!validate()) return;
+
     dispatch(
       login({
         username: form.username,
@@ -50,7 +84,10 @@ export default function LoginScreen() {
       style={{ flex: 1 }}
     >
       <ScrollView
-        contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={[
+          styles.container,
+          { backgroundColor: colors.background },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
@@ -58,17 +95,27 @@ export default function LoginScreen() {
             Welcome to {brand.name}
           </Text>
 
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          <Text
+            style={[styles.subtitle, { color: colors.textSecondary }]}
+          >
             Login to continue
           </Text>
 
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
             <Input
               label="Username"
               placeholder="Enter username"
               value={form.username}
-              onChangeText={(v: string) => handleChange('username', v)}
+              onChangeText={(v: string) =>
+                handleChange('username', v)
+              }
               colors={colors}
+              error={errors.username}
             />
 
             <Input
@@ -76,17 +123,23 @@ export default function LoginScreen() {
               placeholder="Enter phone number"
               keyboardType="phone-pad"
               value={form.phone}
-              onChangeText={(v: string) => handleChange('phone', v)}
+              onChangeText={(v: string) =>
+                handleChange('phone', v)
+              }
               colors={colors}
+              error={errors.phone}
             />
 
             <Input
               label="Address"
               placeholder="Enter address"
               value={form.address}
-              onChangeText={(v: string) => handleChange('address', v)}
+              onChangeText={(v: string) =>
+                handleChange('address', v)
+              }
               colors={colors}
               multiline
+              error={errors.address}
             />
 
             <Input
@@ -94,8 +147,11 @@ export default function LoginScreen() {
               placeholder="Enter email"
               keyboardType="email-address"
               value={form.email}
-              onChangeText={(v: string) => handleChange('email', v)}
+              onChangeText={(v: string) =>
+                handleChange('email', v)
+              }
               colors={colors}
+              error={errors.email}
             />
 
             <Input
@@ -103,12 +159,18 @@ export default function LoginScreen() {
               placeholder="Enter password"
               secureTextEntry
               value={form.password}
-              onChangeText={(v: string) => handleChange('password', v)}
+              onChangeText={(v: string) =>
+                handleChange('password', v)
+              }
               colors={colors}
+              error={errors.password}
             />
 
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: colors.primary }]}
+              style={[
+                styles.button,
+                { backgroundColor: colors.primary },
+              ]}
               onPress={handleSubmit}
             >
               <Text style={styles.buttonText}>Login</Text>
@@ -121,18 +183,27 @@ export default function LoginScreen() {
 }
 
 /* Reusable Input Component */
-function Input({ label, colors, ...props }: any) {
+function Input({ label, colors, error, ...props }: any) {
   return (
     <View style={styles.inputWrapper}>
-      <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+      <Text style={[styles.label, { color: colors.text }]}>
+        {label}
+      </Text>
+
       <TextInput
         {...props}
         placeholderTextColor={colors.textSecondary}
         style={[
           styles.input,
-          { backgroundColor: colors.background, borderColor: colors.border, color: colors.text },
+          {
+            backgroundColor: colors.background,
+            borderColor: error ? '#ef4444' : colors.border,
+            color: colors.text,
+          },
         ]}
       />
+
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 }
@@ -173,6 +244,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     fontSize: 14,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 12,
+    marginTop: 4,
   },
   button: {
     marginTop: 12,

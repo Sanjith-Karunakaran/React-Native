@@ -1,55 +1,182 @@
 import { useCart } from '@/context/CartContext';
 import { useTheme } from '@/context/ThemeContext';
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+
+const CATEGORIES = ['All', 'Pizza', 'Burgers', 'Indian', 'Desserts', 'Beverages', 'Pasta'];
 
 const MENU_ITEMS = [
-  { id: '1', name: 'Margherita Pizza', price: 299, category: 'Pizza', emoji: '🍕' },
-  { id: '2', name: 'Chicken Burger', price: 199, category: 'Burgers', emoji: '🍔' },
-  { id: '3', name: 'Pasta Alfredo', price: 249, category: 'Pasta', emoji: '🍝' },
-  { id: '4', name: 'Caesar Salad', price: 179, category: 'Salads', emoji: '🥗' },
-  { id: '5', name: 'Chocolate Shake', price: 129, category: 'Beverages', emoji: '🥤' },
-  { id: '6', name: 'Pepperoni Pizza', price: 349, category: 'Pizza', emoji: '🍕' },
-  { id: '7', name: 'Veg Biryani', price: 199, category: 'Indian', emoji: '🍛' },
-  { id: '8', name: 'Ice Cream', price: 99, category: 'Desserts', emoji: '🍨' },
+  {
+    id: '1',
+    name: 'Margherita Pizza',
+    price: 299,
+    category: 'Pizza',
+    description: 'Classic cheese pizza with rich tomato sauce',
+    image: 'https://images.unsplash.com/photo-1601924577970-1e6f0d29a4f6',
+  },
+  {
+    id: '2',
+    name: 'Chicken Burger',
+    price: 199,
+    category: 'Burgers',
+    description: 'Juicy grilled chicken patty with fresh veggies',
+    image: 'https://images.unsplash.com/photo-1550547660-d9450f859349',
+  },
+  {
+    id: '3',
+    name: 'Veg Biryani',
+    price: 249,
+    category: 'Indian',
+    description: 'Aromatic basmati rice cooked with spices',
+    image: 'https://images.unsplash.com/photo-1631515243349-e0cb75fb8d34',
+  },
+  {
+    id: '4',
+    name: 'Chocolate Ice Cream',
+    price: 129,
+    category: 'Desserts',
+    description: 'Creamy chocolate indulgence',
+    image: 'https://images.unsplash.com/photo-1505252585461-04db1eb84625',
+  },
+  {
+    id: '5',
+    name: 'Pasta Alfredo',
+    price: 279,
+    category: 'Pasta',
+    description: 'Creamy white sauce pasta with herbs',
+    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9',
+  },
 ];
 
 export default function MenuScreen() {
   const { colors } = useTheme();
   const { addItem } = useCart();
 
-  return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: colors.text }]}>Our Menu</Text>
+  const [search, setSearch] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
 
-        {MENU_ITEMS.map(item => (
-          <View 
-            key={item.id} 
-            style={[styles.card, { backgroundColor: colors.card }]}
+  const filteredItems = useMemo(() => {
+    return MENU_ITEMS.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory =
+        activeCategory === 'All' || item.category === activeCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [search, activeCategory]);
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          placeholder="Search dishes..."
+          value={search}
+          onChangeText={setSearch}
+          placeholderTextColor={colors.textSecondary}
+          style={[
+            styles.searchInput,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              color: colors.text,
+            },
+          ]}
+        />
+      </View>
+
+      {/* Category Filters */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryScroll}
+        contentContainerStyle={styles.categoryContainer}
+      >
+        {CATEGORIES.map(cat => {
+          const active = activeCategory === cat;
+
+          return (
+            <TouchableOpacity
+              key={cat}
+              onPress={() => setActiveCategory(cat)}
+              style={[
+                styles.categoryChip,
+                {
+                  backgroundColor: active ? colors.primary : colors.card,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  color: active ? '#fff' : colors.text,
+                  fontWeight: '600',
+                }}
+              >
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      {/* Menu List */}
+      <FlatList
+        data={filteredItems}
+        keyExtractor={item => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <View
+            style={[
+              styles.card,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
           >
-            <View style={styles.itemInfo}>
-              <View style={styles.details}>
-                <Text style={[styles.itemName, { color: colors.text }]}>
-                  {item.name}
-                </Text>
-                <Text style={[styles.category, { color: colors.textSecondary }]}>
-                  {item.category}
-                </Text>
+            <Image source={{ uri: item.image }} style={styles.image} />
+
+            <View style={styles.info}>
+              <Text style={[styles.name, { color: colors.text }]}>
+                {item.name}
+              </Text>
+
+              <Text
+                style={[
+                  styles.description,
+                  { color: colors.textSecondary },
+                ]}
+                numberOfLines={2}
+              >
+                {item.description}
+              </Text>
+
+              <View style={styles.bottomRow}>
                 <Text style={styles.price}>₹{item.price}</Text>
+
+                <TouchableOpacity
+                  style={[
+                    styles.addButton,
+                    { backgroundColor: colors.primary },
+                  ]}
+                  onPress={() => addItem(item)}
+                >
+                  <Text style={styles.addButtonText}>ADD</Text>
+                </TouchableOpacity>
               </View>
             </View>
-
-            <TouchableOpacity 
-              style={styles.addButton}
-              onPress={() => addItem(item)}
-            >
-              <Text style={styles.addButtonText}>Add</Text>
-            </TouchableOpacity>
           </View>
-        ))}
-      </View>
-    </ScrollView>
+        )}
+      />
+    </View>
   );
 }
 
@@ -57,57 +184,73 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    padding: 16,
+  searchContainer: {
+    padding: 12,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
+  searchInput: {
+    height: 44,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    fontSize: 14,
+  },
+  categoryScroll: {
+    maxHeight: 48,
+  },
+  categoryContainer: {
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  categoryChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  list: {
+    padding: 12,
   },
   card: {
     flexDirection: 'row',
+    borderRadius: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  image: {
+    width: 110,
+    height: 110,
+  },
+  info: {
+    flex: 1,
+    padding: 12,
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  description: {
+    fontSize: 12,
+    marginVertical: 6,
+  },
+  bottomRow: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  itemInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  details: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  category: {
-    fontSize: 12,
-    marginTop: 2,
   },
   price: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#22c55e',
-    marginTop: 4,
   },
   addButton: {
-    backgroundColor: '#f97316',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderRadius: 8,
   },
   addButtonText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 12,
   },
 });
