@@ -1,41 +1,170 @@
-import { createDiscount } from '@/api/discounts';
 import { useTheme } from '@/context/ThemeContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Alert,
+  Animated,
+  Modal,
   Platform,
   ScrollView,
   Switch,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
+
+import { Chip } from '@/components/discount/create-discount/Chip';
+import { DateButton } from '@/components/discount/create-discount/DateButton';
+import { DayChip } from '@/components/discount/create-discount/DayChip';
+import { Field } from '@/components/discount/create-discount/Field';
+import { SegmentButton } from '@/components/discount/create-discount/SegmentButton';
+
 import { createDiscountStyles as styles } from '../../../styles/discounts/createDiscount.styles';
 import { sharedStyles } from '../../../styles/discounts/shared.styles';
 
+import {
+  ALERTS,
+  BUTTONS,
+  DAYS,
+  DISCOUNT_SCOPES,
+  DISCOUNT_TYPES,
+  DISCOUNT_TYPE_OPTIONS,
+  LABELS,
+  PLACEHOLDERS,
+  PLATFORMS,
+  PLATFORM_OPTIONS,
+  SCOPE_OPTIONS,
+  SCREEN_TITLES
+} from '../../../constants/discount.constants';
 
-import { DateButton } from '@/components/discount/DateButton';
-import { DayChip } from '@/components/discount/DayChip';
-import { Field } from '@/components/discount/Field';
-import { SegmentButton } from '@/components/discount/SegmentButton';
-import { Chip } from '../../../components/discount/Chip';
+// Custom Success Modal Component
+const SuccessModal = ({ visible, onClose, colors }: any) => {
+  const [scaleAnim] = useState(new Animated.Value(0));
 
+  React.useEffect(() => {
+    if (visible) {
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      scaleAnim.setValue(0);
+    }
+  }, [visible]);
 
+  return (
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={{
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+      }}>
+        <Animated.View style={{
+          backgroundColor: colors.card,
+          borderRadius: 24,
+          padding: 32,
+          width: '100%',
+          maxWidth: 340,
+          alignItems: 'center',
+          transform: [{ scale: scaleAnim }],
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 20 },
+          shadowOpacity: 0.3,
+          shadowRadius: 30,
+          elevation: 10,
+        }}>
+          {/* Success Icon */}
+          <View style={{
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            backgroundColor: '#10B981',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 24,
+          }}>
+            <Text style={{
+              fontSize: 48,
+              color: '#fff',
+            }}>✓</Text>
+          </View>
 
+          {/* Title */}
+          <Text style={{
+            fontSize: 26,
+            fontWeight: '800',
+            color: colors.text,
+            marginBottom: 12,
+            letterSpacing: -0.5,
+            textAlign: 'center',
+          }}>
+            Discount Created!
+          </Text>
 
-const CLIENT_ID = 1;
+          {/* Description */}
+          <Text style={{
+            fontSize: 16,
+            color: colors.textSecondary,
+            textAlign: 'center',
+            marginBottom: 28,
+            lineHeight: 24,
+            opacity: 0.7,
+          }}>
+            Your discount has been successfully created and is now active
+          </Text>
+
+          {/* Action Button */}
+          <TouchableOpacity
+            onPress={onClose}
+            style={{
+              backgroundColor: colors.primary,
+              paddingHorizontal: 40,
+              paddingVertical: 16,
+              borderRadius: 14,
+              width: '100%',
+              alignItems: 'center',
+              shadowColor: colors.primary,
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              elevation: 6,
+            }}
+          >
+            <Text style={{
+              color: '#fff',
+              fontSize: 17,
+              fontWeight: '700',
+              letterSpacing: -0.3,
+            }}>
+              Awesome!
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+};
 
 export default function CreateDiscountScreen() {
   const { colors } = useTheme();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [form, setForm] = useState({
     description: '',
-    type: 'PERCENTAGE',
+    type: DISCOUNT_TYPES.PERCENTAGE,
     value: '',
     priority: '1',
-    scope: 'ORDER',
-    platform: 'BOTH',
+    scope: DISCOUNT_SCOPES.ORDER,
+    platform: PLATFORMS.BOTH,
     timeEnabled: false,
     startDate: '',
     endDate: '',
@@ -44,250 +173,176 @@ export default function CreateDiscountScreen() {
     days: [] as number[],
   });
 
-  const [picker, setPicker] = useState<{
-    mode: 'date' | 'time';
-    field: string;
-    visible: boolean;
-  }>({ mode: 'date', field: '', visible: false });
+  const [picker, setPicker] = useState<{ mode: 'date' | 'time'; field: string; visible: boolean }>({
+    mode: 'date',
+    field: '',
+    visible: false,
+  });
 
-  const update = (key: string, value: any) =>
+  /* -------------------- Generic Handlers -------------------- */
+
+  const update = useCallback((key: string, value: any) => {
     setForm(prev => ({ ...prev, [key]: value }));
+  }, []);
 
-  const toggleDay = (day: number) =>
+  const bindField = useCallback(
+    (key: string) => (value: any) => update(key, value),
+    [update]
+  );
+
+  const bindPress = useCallback(
+    (key: string, value: any) => () => update(key, value),
+    [update]
+  );
+
+  const toggleDay = useCallback((day: number) => {
     setForm(prev => ({
       ...prev,
       days: prev.days.includes(day)
         ? prev.days.filter(d => d !== day)
         : [...prev.days, day],
     }));
+  }, []);
 
-  const formatDate = (date: Date) => date.toISOString().split('T')[0];
+  const openPicker = useCallback((mode: 'date' | 'time', field: string) => {
+    setPicker({ visible: true, mode, field });
+  }, []);
 
-  const formatTime = (date: Date) => date.toTimeString().slice(0, 5);
+  const formatDate = (d: Date) => d.toISOString().split('T')[0];
+  const formatTime = (d: Date) => d.toTimeString().slice(0, 5);
 
-  const handlePickerChange = (_: any, date?: Date) => {
-    if (!date) return setPicker({ ...picker, visible: false });
+  const handlePickerChange = useCallback((_: any, date?: Date) => {
+    if (!date) return setPicker(prev => ({ ...prev, visible: false }));
 
-    const value =
-      picker.mode === 'date'
-        ? formatDate(date)
-        : formatTime(date);
-
+    const value = picker.mode === 'date' ? formatDate(date) : formatTime(date);
     update(picker.field, value);
-    setPicker({ ...picker, visible: false });
-  };
+    setPicker(prev => ({ ...prev, visible: false }));
+  }, [picker, update]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!form.description || !form.value) {
-      return Alert.alert('Validation Error', 'Please fill all required fields');
+      return Alert.alert(
+        ALERTS.VALIDATION_ERROR_TITLE,
+        ALERTS.VALIDATION_ERROR_MSG
+      );
     }
 
-    const payload: any = {
-      client_id: CLIENT_ID,
-      description: form.description,
-      discount_type: form.type,
-      discount_value: Number(form.value),
-      priority: Number(form.priority),
-      scopes: [
-        {
-          type: form.scope,
-          platform: form.platform,
-        },
-      ],
-    };
+    // Show success modal after short delay
+    setTimeout(() => {
+      setShowSuccessModal(true);
+    }, 300);
+  }, [form]);
 
-    if (form.timeEnabled) {
-      payload.conditions = [
-        {
-          time: {
-            start_date: form.startDate,
-            end_date: form.endDate,
-            start_time: form.startTime,
-            end_time: form.endTime,
-            days_of_week: form.days.join(','),
-          },
-        },
-      ];
-    }
-
-    try {
-      console.log('CREATE PAYLOAD →', payload);
-      await createDiscount(payload);
-      Alert.alert('Success', 'Discount created successfully');
-    } catch (err: any) {
-      console.log('CREATE ERROR →', err?.response?.data || err.message);
-      Alert.alert('Error', 'Failed to create discount');
-    }
-  };
+  const handleCloseSuccessModal = useCallback(() => {
+    setShowSuccessModal(false);
+    // Optional: Reset form or navigate away
+    // setForm({ ... reset values ... });
+  }, []);
 
   return (
     <>
-      <ScrollView
-        style={[sharedStyles.container, { backgroundColor: colors.background }]}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={[sharedStyles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>
-            New Discount
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Configure your discount settings
-          </Text>
+          <Text style={[styles.title, { color: colors.text }]}>{SCREEN_TITLES.CREATE}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Configure your discount settings</Text>
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.card }]}>
-          <View style={styles.section}>
-            <Field
-              label="Description"
-              placeholder="e.g., Weekend Special Offer"
-              value={form.description}
-              onChangeText={(v: string) => update('description', v)}
-              colors={colors}
-            />
-          </View>
+          <Field
+            label={LABELS.DESCRIPTION}
+            placeholder={PLACEHOLDERS.DESCRIPTION}
+            value={form.description}
+            onChangeText={bindField('description')}
+            colors={colors}
+          />
 
-          <View style={styles.section}>
-            <Text style={[styles.sectionLabel, { color: colors.text }]}>
-              Discount Type
-            </Text>
-
-            <View style={styles.segmentedControl}>
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>{LABELS.DISCOUNT_TYPE}</Text>
+          <View style={[styles.segmentedControl, { backgroundColor: colors.background }]}>
+            {DISCOUNT_TYPE_OPTIONS.map((opt, idx) => (
               <SegmentButton
-                label="Percentage"
-                icon="%"
-                active={form.type === 'PERCENTAGE'}
-                onPress={() => update('type', 'PERCENTAGE')}
+                key={opt.value}
+                label={opt.label}
+                icon={opt.icon}
+                active={form.type === opt.value}
+                onPress={bindPress('type', opt.value)}
                 colors={colors}
-                position="left"
+                position={idx === 0 ? 'left' : 'right'}
               />
+            ))}
+          </View>
+
+          <Field
+            label={form.type === DISCOUNT_TYPES.PERCENTAGE ? 'Percentage Value' : 'Amount'}
+            placeholder={form.type === DISCOUNT_TYPES.PERCENTAGE ? PLACEHOLDERS.PERCENTAGE : PLACEHOLDERS.AMOUNT}
+            keyboardType="numeric"
+            value={form.value}
+            onChangeText={bindField('value')}
+            colors={colors}
+          />
+
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>{LABELS.APPLY_TO}</Text>
+          <View style={[styles.segmentedControl, { backgroundColor: colors.background }]}>
+            {SCOPE_OPTIONS.map((opt, idx) => (
               <SegmentButton
-                label="Fixed Amount"
-                icon="₹"
-                active={form.type === 'FLAT'}
-                onPress={() => update('type', 'FLAT')}
+                key={opt.value}
+                label={opt.label}
+                active={form.scope === opt.value}
+                onPress={bindPress('scope', opt.value)}
                 colors={colors}
-                position="right"
+                position={idx === 0 ? 'left' : 'right'}
               />
-            </View>
-
-            <View style={styles.valueContainer}>
-              <Field
-                label={form.type === 'PERCENTAGE' ? 'Percentage Value' : 'Amount'}
-                placeholder={form.type === 'PERCENTAGE' ? '10' : '100'}
-                keyboardType="numeric"
-                value={form.value}
-                onChangeText={(v: string) => update('value', v)}
-                colors={colors}
-                suffix={form.type === 'PERCENTAGE' ? '%' : '₹'}
-              />
-            </View>
+            ))}
           </View>
 
-          <View style={styles.section}>
-            <Text style={[styles.sectionLabel, { color: colors.text }]}>
-              Apply To
-            </Text>
-
-            <View style={styles.segmentedControl}>
-              <SegmentButton
-                label="Entire Order"
-                active={form.scope === 'ORDER'}
-                onPress={() => update('scope', 'ORDER')}
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>{LABELS.PLATFORM}</Text>
+          <View style={styles.chipRow}>
+            {PLATFORM_OPTIONS.map(opt => (
+              <Chip
+                key={opt.value}
+                label={opt.label}
+                active={form.platform === opt.value}
+                onPress={bindPress('platform', opt.value)}
                 colors={colors}
-                position="left"
               />
-              <SegmentButton
-                label="Per Item"
-                active={form.scope === 'ITEM'}
-                onPress={() => update('scope', 'ITEM')}
-                colors={colors}
-                position="right"
-              />
-            </View>
+            ))}
           </View>
 
-          <View style={styles.section}>
-            <Text style={[styles.sectionLabel, { color: colors.text }]}>
-              Platform
-            </Text>
-
-            <View style={styles.chipRow}>
-              <Chip label="All" active={form.platform === 'BOTH'} onPress={() => update('platform', 'BOTH')} colors={colors} />
-              <Chip label="Dine-in" active={form.platform === 'DINE_IN'} onPress={() => update('platform', 'DINE_IN')} colors={colors} />
-              <Chip label="POS" active={form.platform === 'POS'} onPress={() => update('platform', 'POS')} colors={colors} />
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Field
-              label="Priority"
-              placeholder="1"
-              keyboardType="numeric"
-              value={form.priority}
-              onChangeText={(v: string) => update('priority', v)}
-              colors={colors}
-              helper="Higher priority discounts are applied first"
-            />
-          </View>
+          <Field
+            label={LABELS.PRIORITY}
+            placeholder={PLACEHOLDERS.PRIORITY}
+            keyboardType="numeric"
+            value={form.priority}
+            onChangeText={bindField('priority')}
+            colors={colors}
+          />
 
           <View style={[styles.toggleSection, { backgroundColor: colors.background }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.toggleLabel, { color: colors.text }]}>
-                Time Restrictions
-              </Text>
-              <Text style={[styles.toggleHelper, { color: colors.textSecondary }]}>
-                Set specific dates and times
-              </Text>
-            </View>
-
-            <Switch
-              value={form.timeEnabled}
-              onValueChange={v => update('timeEnabled', v)}
-              trackColor={{ false: colors.border, true: colors.primary + '40' }}
-              thumbColor={form.timeEnabled ? colors.primary : colors.textSecondary}
-            />
+            <Text style={[styles.toggleLabel, { color: colors.text }]}>{LABELS.TIME_RESTRICTIONS}</Text>
+            <Switch value={form.timeEnabled} onValueChange={bindField('timeEnabled')} />
           </View>
 
           {form.timeEnabled && (
             <View style={[styles.timeCard, { backgroundColor: colors.background }]}>
               <View style={styles.timeRow}>
-                <DateButton label="Start Date" value={form.startDate} onPress={() => setPicker({ visible: true, mode: 'date', field: 'startDate' })} colors={colors} />
-                <DateButton label="End Date" value={form.endDate} onPress={() => setPicker({ visible: true, mode: 'date', field: 'endDate' })} colors={colors} />
+                <DateButton label="Start Date" value={form.startDate} onPress={() => openPicker('date', 'startDate')} colors={colors} />
+                <DateButton label="End Date" value={form.endDate} onPress={() => openPicker('date', 'endDate')} colors={colors} />
               </View>
-
               <View style={styles.timeRow}>
-                <DateButton label="Start Time" value={form.startTime} onPress={() => setPicker({ visible: true, mode: 'time', field: 'startTime' })} colors={colors} />
-                <DateButton label="End Time" value={form.endTime} onPress={() => setPicker({ visible: true, mode: 'time', field: 'endTime' })} colors={colors} />
+                <DateButton label="Start Time" value={form.startTime} onPress={() => openPicker('time', 'startTime')} colors={colors} />
+                <DateButton label="End Time" value={form.endTime} onPress={() => openPicker('time', 'endTime')} colors={colors} />
               </View>
-
-              <View>
-                <Text style={[styles.sectionLabel, { color: colors.text }]}>
-                  Active Days
-                </Text>
-                <View style={styles.daysRow}>
-                  {[1,2,3,4,5,6,7].map(d => (
-                    <DayChip
-                      key={d}
-                      label={['M','T','W','T','F','S','S'][d-1]}
-                      active={form.days.includes(d)}
-                      onPress={() => toggleDay(d)}
-                      colors={colors}
-                    />
-                  ))}
-                </View>
+              <View style={styles.daysRow}>
+                {DAYS.map(d => (
+                  <DayChip key={d.value} label={d.label} active={form.days.includes(d.value)} onPress={() => toggleDay(d.value)} colors={colors} />
+                ))}
               </View>
             </View>
           )}
         </View>
 
-        <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: colors.primary }]}
-          onPress={handleSubmit}
-        >
-          <Text style={styles.submitText}>Create Discount</Text>
+        <TouchableOpacity style={[styles.submitButton, { backgroundColor: colors.primary }]} onPress={handleSubmit}>
+          <Text style={styles.submitText}>{BUTTONS.CREATE}</Text>
         </TouchableOpacity>
-
-        <View style={{ height: 24 }} />
       </ScrollView>
 
       {picker.visible && (
@@ -298,10 +353,12 @@ export default function CreateDiscountScreen() {
           onChange={handlePickerChange}
         />
       )}
+
+      <SuccessModal
+        visible={showSuccessModal}
+        onClose={handleCloseSuccessModal}
+        colors={colors}
+      />
     </>
   );
 }
-
-
-
-

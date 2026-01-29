@@ -1,7 +1,7 @@
 // app/(drawer)/(tabs)/edit-discount.tsx
 
 import { getDiscountById, updateDiscount } from '@/api/discounts';
-import { Field } from '@/components/discount/Field';
+import { Field } from '@/components/discount/create-discount/Field';
 import { useTheme } from '@/context/ThemeContext';
 import { editDiscountStyles as styles } from '@/styles/discounts/editDiscount.styles';
 import { sharedStyles } from '@/styles/discounts/shared.styles';

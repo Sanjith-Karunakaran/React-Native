@@ -56,6 +56,17 @@ export default function TabLayout() {
         }}
       />
 
+      <Tabs.Screen
+        name="Dashboard"
+        options={{
+          title: 'Dashboard',
+          tabBarLabel: 'Dashboard',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="grid" size={size} color={color} />
+          ),
+        }}
+      />
+
       {/* 3️⃣ EDIT DISCOUNT */}
       <Tabs.Screen
         name="edit-discount"
